@@ -1,5 +1,35 @@
+# Python bytecode & cache files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
 .venv/
 venv/
+ENV/
+env/
+
+# Environment variable files
 .env
+.env.local
+
+# Build & packaging
+build/
+dist/
+*.egg-info/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+

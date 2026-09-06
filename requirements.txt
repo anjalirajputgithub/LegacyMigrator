@@ -1,0 +1,38 @@
+# Phase 0-1: parsing & api
+tree-sitter>=0.22.0
+tree-sitter-python>=0.21.0
+tree-sitter-javascript>=0.21.0
+pyyaml
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+httpx
+
+
+# Phase 2: agent / LLMs
+langgraph
+langchain
+langchain-core
+langchain-community
+langchain-anthropic
+langchain-openai
+langchain-huggingface
+transformers
+sentence-transformers
+huggingface-hub
+tiktoken
+
+# Phase 3: RAG
+qdrant-client
+
+# Phase 4: sandboxing 
+docker  
+
+# Phase 5: async jobs
+redis
+rq
+
+# testing
+pytest
+pytest-asyncio

@@ -8,7 +8,20 @@ phase (pattern detection, RAG chunking, migration) is built on top of this.
 """
 
 from pathlib import Path
-from tree_sitter_languages import get_parser
+from tree_sitter import Language, Parser
+import tree_sitter_javascript  # type: ignore
+import tree_sitter_python      # type: ignore
+
+
+def get_parser(language_name: str) -> Parser:
+    if language_name == "javascript":
+        lang_ptr = tree_sitter_javascript.language()
+    elif language_name == "python":
+        lang_ptr = tree_sitter_python.language()
+    else:
+        raise ValueError(f"Unsupported language: {language_name}")
+    
+    return Parser(Language(lang_ptr))
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
 

@@ -13,7 +13,7 @@ patterns by structure, not text matching.
 ## What's here
 
 - `phase0/parse_ast.py` — parses a file and pretty-prints its syntax tree
-- `phase0/detect_patterns.py` — walks the tree and flags legacy patterns
+- `pphase0/rule_engine.py` — walks the tree and flags legacy patterns
   (e.g. `var` usage, jQuery calls, `.has_key()`)
 - `phase0/samples/` — example legacy JS and Python 2 files used for testing
 
@@ -23,7 +23,8 @@ patterns by structure, not text matching.
 cd phase0
 pip install -r requirements.txt
 python3 parse_ast.py
-python3 detect_patterns.py
+python phase0/rule_engine.py
+pytest phase0/test_rule_engine.py -v
 ```
 
 ## What's next
