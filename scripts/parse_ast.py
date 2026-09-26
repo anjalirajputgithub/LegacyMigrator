@@ -23,7 +23,7 @@ def get_parser(language_name: str) -> Parser:
     
     return Parser(Language(lang_ptr))
 
-SAMPLES_DIR = Path(__file__).parent / "samples"
+SAMPLES_DIR = Path(__file__).resolve().parent.parent / "backend" / "tests" / "samples"
 
 
 def pretty_print(node, source: bytes, depth: int = 0, max_depth: int = 6):

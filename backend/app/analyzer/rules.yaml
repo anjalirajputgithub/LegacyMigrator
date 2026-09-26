@@ -1,0 +1,146 @@
+# # Legacy pattern rules, defined declaratively using tree-sitter's query
+# # language. To add a new pattern: add a new entry here. Never touch the
+# # engine code (run_rules.py) again.
+# #
+# # Query syntax quick reference:
+# #   (node_type) @capture-name              -- match any node of this type
+# #   (node_type "literal_token")            -- match a specific keyword/token
+# #   field_name: (child_type) @name         -- match a specific child field
+# #   (#eq? @name "text")                    -- predicate: capture's text must equal "text"
+
+# javascript:
+#   - id: legacy-var
+#     message: "Use of 'var' -- migrate to let/const"
+#     severity: warning
+#     query: |
+#       (variable_declaration "var") @match
+
+#   - id: jquery-call
+#     message: "jQuery '$(...)' call -- candidate for React/DOM migration"
+#     severity: info
+#     query: |
+#       (call_expression
+#         function: (identifier) @fn
+#         (#eq? @fn "$")) @match
+
+#   - id: prototype-pattern
+#     message: "'.prototype.' assignment -- candidate for ES6 class syntax"
+#     severity: info
+#     query: |
+#       (member_expression
+#         property: (property_identifier) @prop
+#         (#eq? @prop "prototype")) @match
+
+#   - id: loose-equality
+#     message: "'==' used -- migrate to strict '===' to avoid type coercion bugs"
+#     severity: warning
+#     query: |
+#       (binary_expression operator: "==") @match
+
+#   - id: arguments-callee
+#     message: "'arguments.callee' is deprecated and forbidden in strict mode"
+#     severity: error
+#     query: |
+#       (member_expression
+#         object: (identifier) @obj
+#         property: (property_identifier) @prop
+#         (#eq? @obj "arguments")
+#         (#eq? @prop "callee")) @match
+
+# python:
+#   - id: py2-has-key
+#     message: "'.has_key()' removed in Python 3 -- migrate to 'in'"
+#     severity: error
+#     query: |
+#       (call
+#         function: (attribute attribute: (identifier) @attr)
+#         (#eq? @attr "has_key")) @match
+
+#   - id: py2-xrange
+#     message: "'xrange' removed in Python 3 -- migrate to 'range'"
+#     severity: error
+#     query: |
+#       (call
+#         function: (identifier) @fn
+#         (#eq? @fn "xrange")) @match
+
+#   - id: py2-urllib2
+#     message: "'urllib2' removed in Python 3 -- migrate to 'urllib.request'"
+#     severity: error
+#     query: |
+#       (import_statement
+#         name: (dotted_name (identifier) @mod)
+#         (#eq? @mod "urllib2")) @match
+
+# Legacy pattern rules, defined declaratively using tree-sitter's query
+# language. To add a new pattern: add a new entry here.
+
+javascript:
+  - id: legacy-var
+    message: "Use of 'var' -- migrate to let/const"
+    severity: warning
+    query: |
+      (variable_declaration "var") @match
+
+  - id: jquery-call
+    message: "jQuery '$(...)' call -- candidate for React/DOM migration"
+    severity: info
+    query: |
+      (call_expression
+        function: (identifier) @fn
+        (#eq? @fn "$")) @match
+
+  - id: prototype-pattern
+    message: "'.prototype.' assignment -- candidate for ES6 class syntax"
+    severity: info
+    query: |
+      (member_expression
+        property: (property_identifier) @prop
+        (#eq? @prop "prototype")) @match
+
+  - id: loose-equality
+    message: "'==' used -- migrate to strict '===' to avoid type coercion bugs"
+    severity: warning
+    query: |
+      (binary_expression operator: "==") @match
+
+  - id: arguments-callee
+    message: "'arguments.callee' is deprecated and forbidden in strict mode"
+    severity: error
+    query: |
+      (member_expression
+        object: (identifier) @obj
+        property: (property_identifier) @prop
+        (#eq? @obj "arguments")
+        (#eq? @prop "callee")) @match
+
+python:
+  - id: py2-has-key
+    message: "'.has_key()' removed in Python 3 -- migrate to 'in'"
+    severity: error
+    query: |
+      (call
+        function: (attribute attribute: (identifier) @attr)
+        (#eq? @attr "has_key")) @match
+
+  - id: py2-xrange
+    message: "'xrange' removed in Python 3 -- migrate to 'range'"
+    severity: error
+    query: |
+      (call
+        function: (identifier) @fn
+        (#eq? @fn "xrange")) @match
+
+  - id: py2-urllib2
+    message: "'urllib2' removed in Python 3 -- migrate to 'urllib.request'"
+    severity: error
+    query: |
+      (import_statement
+        name: (dotted_name (identifier) @mod)
+        (#eq? @mod "urllib2")) @match
+
+  - id: parse-error
+    message: "Syntax parse error -- likely legacy construct unsupported by modern grammar"
+    severity: warning
+    query: |
+      (ERROR) @match

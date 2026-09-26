@@ -1,3 +1,68 @@
+# """
+# The analyzer engine -- your Phase 0 run_rules.py, moved here unchanged in
+# approach, just made importable instead of script-only. This module still
+# has zero knowledge of specific patterns; it only runs whatever's in
+# rules.yaml.
+# """
+
+# from pathlib import Path
+# from typing import Literal
+
+# import yaml
+# import tree_sitter_python as tspython
+# import tree_sitter_javascript as tsjavascript
+# from tree_sitter import Language, Parser, Query, QueryCursor
+
+# RULES_FILE = Path(__file__).parent / "rules.yaml"
+
+# SupportedLanguage = Literal["python", "javascript"]
+
+# LANGUAGES = {
+#     "python": Language(tspython.language()),
+#     "javascript": Language(tsjavascript.language()),
+# }
+
+# # Load rules once at import time -- rules.yaml doesn't change at runtime,
+# # no reason to re-read the file on every request.
+# with open(RULES_FILE) as f:
+#     _ALL_RULES = yaml.safe_load(f)
+
+
+# def load_rules(language: SupportedLanguage) -> list[dict]:
+#     return _ALL_RULES.get(language, [])
+
+
+# def analyze_code(source: bytes, language: SupportedLanguage) -> list[dict]:
+#     """Parse `source` and return every rule match as a finding dict.
+
+#     This is the one function the API layer calls -- it takes raw bytes in,
+#     returns plain dicts out, and knows nothing about HTTP or JSON. Keeping
+#     it decoupled like this means we can test it directly (see
+#     tests/test_analyzer.py) without spinning up a server, and reuse it
+#     later from the CLI, the LangGraph agent, or a batch job -- not just
+#     the API.
+#     """
+#     if language not in LANGUAGES:
+#         raise ValueError(f"Unsupported language: {language}")
+
+#     lang = LANGUAGES[language]
+#     parser = Parser(lang)
+#     tree = parser.parse(source)
+
+#     findings = []
+#     for rule in load_rules(language):
+#         query = Query(lang, rule["query"])
+#         cursor = QueryCursor(query)
+#         captures = cursor.captures(tree.root_node)
+#         for node in captures.get("match", []):
+#             findings.append({
+#                 "line": node.start_point[0] + 1,
+#                 "rule_id": rule["id"],
+#                 "severity": rule["severity"],
+#                 "message": rule["message"],
+#                 "snippet": source[node.start_byte:node.end_byte].decode(errors="replace")[:80],
+#             })
+#     return sorted(findings, key=lambda f: f["line"])
 """
 Generic, config-driven pattern detector with robust validation and query caching.
 
@@ -60,7 +125,7 @@ def execute_query(lang, query_obj, root_node):
 
 
 RULES_FILE = Path(__file__).parent / "rules.yaml"
-SAMPLES_DIR = Path(__file__).parent / "samples"
+SAMPLES_DIR = Path(__file__).resolve().parent.parent.parent / "tests" / "samples"
 logger = logging.getLogger("ASTRuleEngine")
 
 
@@ -117,11 +182,10 @@ class ASTRuleEngine:
 
             self._compiled_queries[lang_name] = compiled_rules
 
-    def run_rules(self, path: Path, language: str) -> List[Dict[str, Any]]:
-        """Analyzes a source file against pre-compiled rules."""
-        if not path.exists():
-            logger.error(f"File not found: {path}")
-            return []
+    def analyze_code(self, source: bytes, language: str) -> List[Dict[str, Any]]:
+        """Analyzes in-memory source code bytes against pre-compiled rules."""
+        if language not in LANGUAGES:
+            raise ValueError(f"Unsupported language: '{language}'")
 
         rules = self._compiled_queries.get(language, [])
         if not rules:
@@ -129,10 +193,9 @@ class ASTRuleEngine:
 
         try:
             lang, parser = get_lang_and_parser(language)
-            source = path.read_bytes()
             tree = parser.parse(source)
         except Exception as e:
-            logger.error(f"Failed to parse source file {path}: {e}")
+            logger.error(f"Failed to parse source code: {e}")
             return []
 
         findings = []
@@ -149,7 +212,7 @@ class ASTRuleEngine:
                 if capture_name != "match":
                     continue
 
-                # 3. Deduplication Check (line, rule_id, start_byte, end_byte)
+                # Deduplication Check (line, rule_id, start_byte, end_byte)
                 dedup_key = (node.start_point[0] + 1, rule["id"], node.start_byte, node.end_byte)
                 if dedup_key in seen:
                     continue
@@ -160,16 +223,37 @@ class ASTRuleEngine:
                     "rule_id": rule["id"],
                     "severity": rule["severity"],
                     "message": rule["message"],
-                    "snippet": source[node.start_byte:node.end_byte].decode(errors="replace")[:60],
+                    "snippet": source[node.start_byte:node.end_byte].decode(errors="replace")[:80],
                 })
 
         return sorted(findings, key=lambda f: f["line"])
 
+    def run_rules(self, path: Path, language: str) -> List[Dict[str, Any]]:
+        """Analyzes a source file against pre-compiled rules."""
+        if not path.exists():
+            logger.error(f"File not found: {path}")
+            return []
+
+        try:
+            source = path.read_bytes()
+        except Exception as e:
+            logger.error(f"Failed to read source file {path}: {e}")
+            return []
+
+        return self.analyze_code(source, language)
+
+
+_DEFAULT_ENGINE = ASTRuleEngine()
+
+
+def analyze_code(source: bytes, language: str) -> List[Dict[str, Any]]:
+    """Analyzes raw source bytes against declarative rules."""
+    return _DEFAULT_ENGINE.analyze_code(source, language)
+
 
 def run_rules(path: Path, language: str) -> List[Dict[str, Any]]:
     """Helper function maintaining backwards compatibility with existing calls."""
-    engine = ASTRuleEngine()
-    return engine.run_rules(path, language)
+    return _DEFAULT_ENGINE.run_rules(path, language)
 
 
 if __name__ == "__main__":
