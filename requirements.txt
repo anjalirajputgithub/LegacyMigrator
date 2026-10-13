@@ -14,6 +14,7 @@ httpx
 langgraph
 langchain
 langchain-core
+langchain_groq
 langchain-community
 langchain-anthropic
 langchain-openai

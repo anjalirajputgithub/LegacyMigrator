@@ -28,3 +28,16 @@ class AnalyzeResponse(BaseModel):
     language: str
     finding_count: int
     findings: list[Finding]
+
+class MigrateRequest(BaseModel):
+    code: str = Field(..., description="The source code to migrate", min_length=1)
+    language: Literal["python", "javascript"] = Field(...)
+ 
+ 
+class MigrateResponse(BaseModel):
+    language: str
+    original_code: str
+    final_code: str
+    explanation: str
+    findings_fixed: int
+    revisions: int
